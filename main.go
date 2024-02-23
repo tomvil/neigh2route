@@ -122,7 +122,9 @@ func (nm *NeighborManager) MonitorNeighbors() {
 
 		if update.Neigh.State == netlink.NUD_REACHABLE && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.AddNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
-		} else {
+		}
+
+		if update.Neigh.State == netlink.NUD_FAILED || nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.RemoveNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
 	}

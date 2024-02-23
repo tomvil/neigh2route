@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/j-keck/arping"
@@ -139,6 +142,17 @@ func (nm *NeighborManager) MonitorNeighbors() {
 	}
 }
 
+func (nm *NeighborManager) Cleanup() {
+	nm.mu.Lock()
+	defer nm.mu.Unlock()
+
+	for _, n := range nm.reachableNeighbors {
+		if err := removeRoute(n.ip, n.linkIndex); err != nil {
+			log.Printf("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
+		}
+	}
+}
+
 func routeExists(dst *net.IPNet, linkIndex int) (bool, error) {
 	routes, err := netlink.RouteListFiltered(netlink.FAMILY_ALL, &netlink.Route{
 		LinkIndex: linkIndex,
@@ -196,8 +210,6 @@ func removeRoute(ip net.IP, linkIndex int) error {
 		return nil
 	}
 
-	fmt.Printf("Removing route for neighbor %+v\n", ip)
-
 	route := &netlink.Route{
 		LinkIndex: linkIndex,
 		Scope:     netlink.SCOPE_LINK,
@@ -237,6 +249,15 @@ func main() {
 	if err := nm.initializeNeighborTable(); err != nil {
 		log.Fatalf("Failed to initialize neighbor table: %v", err)
 	}
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		nm.Cleanup()
+		os.Exit(0)
+	}()
 
 	go SendARPRequests(nm)
 

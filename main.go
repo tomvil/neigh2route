@@ -18,9 +18,14 @@ var (
 
 type NeighborManager struct {
 	mu                   sync.Mutex
-	reachableNeighbors   []net.IP
+	reachableNeighbors   []Neighbor
 	targetInterface      string
 	targetInterfaceIndex int
+}
+
+type Neighbor struct {
+	ip        net.IP
+	linkIndex int
 }
 
 func NewNeighborManager(targetInterface string) (*NeighborManager, error) {
@@ -49,7 +54,11 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 		return
 	}
 
-	nm.reachableNeighbors = append(nm.reachableNeighbors, ip)
+	nm.reachableNeighbors = append(nm.reachableNeighbors, Neighbor{
+		ip:        ip,
+		linkIndex: linkIndex,
+	})
+
 	if err := addRoute(ip, linkIndex); err != nil {
 		log.Printf("Failed to add route for neighbor %s: %v", ip.String(), err)
 	}
@@ -60,7 +69,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	defer nm.mu.Unlock()
 
 	for i, n := range nm.reachableNeighbors {
-		if n.Equal(ip) {
+		if n.ip.Equal(ip) {
 			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
 			if err := removeRoute(ip, linkIndex); err != nil {
 				log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
@@ -72,7 +81,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 
 func (nm *NeighborManager) NeighborExists(ip net.IP) bool {
 	for _, n := range nm.reachableNeighbors {
-		if n.Equal(ip) {
+		if n.ip.Equal(ip) {
 			return true
 		}
 	}
@@ -206,8 +215,8 @@ func removeRoute(ip net.IP, linkIndex int) error {
 func SendARPRequests(nm *NeighborManager) {
 	for {
 		nm.mu.Lock()
-		for _, ip := range nm.reachableNeighbors {
-			arping.Ping(ip)
+		for _, n := range nm.reachableNeighbors {
+			arping.Ping(n.ip)
 		}
 		nm.mu.Unlock()
 

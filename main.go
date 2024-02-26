@@ -31,6 +31,14 @@ type Neighbor struct {
 	linkIndex int
 }
 
+func (n Neighbor) IsEmpty() bool {
+	return n.ip == nil
+}
+
+func (n Neighbor) LinkIndexChanged(linkIndex int) bool {
+	return n.linkIndex != linkIndex
+}
+
 func NewNeighborManager(targetInterface string) (*NeighborManager, error) {
 	nm := &NeighborManager{
 		targetInterface: targetInterface,
@@ -53,8 +61,13 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 	nm.mu.Lock()
 	defer nm.mu.Unlock()
 
-	if nm.NeighborExists(ip) {
-		return
+	if neighbor := nm.getNeighbor(ip); !neighbor.IsEmpty() {
+		if !neighbor.LinkIndexChanged(linkIndex) {
+			return
+		}
+
+		log.Printf("Neighbor %s link index changed, re-adding route", ip.String())
+		nm.RemoveNeighbor(neighbor.ip, neighbor.linkIndex)
 	}
 
 	nm.reachableNeighbors = append(nm.reachableNeighbors, Neighbor{
@@ -82,13 +95,13 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	}
 }
 
-func (nm *NeighborManager) NeighborExists(ip net.IP) bool {
+func (nm *NeighborManager) getNeighbor(ip net.IP) Neighbor {
 	for _, n := range nm.reachableNeighbors {
 		if n.ip.Equal(ip) {
-			return true
+			return n
 		}
 	}
-	return false
+	return Neighbor{}
 }
 
 func (nm *NeighborManager) isNeighborExternallyLearned(flags int) bool {

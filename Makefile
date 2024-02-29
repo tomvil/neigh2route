@@ -11,7 +11,7 @@ clean:
 	rm -f ${PACKAGES_DIR}/*
 
 run:
-	go run .
+	go run ./cmd/neigh2route
 
 build:
-	GOARCH=amd64 GOOS=linux go build -o ${PACKAGES_DIR}/neigh2route-${VERSION}-linux
+	GOARCH=amd64 GOOS=linux go build -o ${PACKAGES_DIR}/neigh2route-${VERSION}-linux ./cmd/neigh2route

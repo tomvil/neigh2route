@@ -14,4 +14,4 @@ run:
 	go run ./cmd/neigh2route
 
 build:
-	GOARCH=amd64 GOOS=linux go build -o ${PACKAGES_DIR}/neigh2route-${VERSION}-linux ./cmd/neigh2route
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o ${PACKAGES_DIR}/neigh2route-${VERSION}-linux ./cmd/neigh2route

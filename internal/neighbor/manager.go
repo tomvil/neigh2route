@@ -101,7 +101,7 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 	}
 
 	for _, n := range neighbors {
-		if n.State == netlink.NUD_REACHABLE && !nm.isNeighborExternallyLearned(n.Flags) {
+		if (n.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(n.Flags) {
 			nm.AddNeighbor(n.IP, n.LinkIndex)
 		}
 	}
@@ -123,7 +123,7 @@ func (nm *NeighborManager) MonitorNeighbors() {
 			continue
 		}
 
-		if update.Neigh.State == netlink.NUD_REACHABLE && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {
+		if (update.Neigh.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.AddNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
 

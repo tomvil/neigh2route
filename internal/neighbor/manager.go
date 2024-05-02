@@ -3,7 +3,6 @@ package neighbor
 import (
 	"log"
 	"net"
-	"time"
 
 	"github.com/tomvil/neigh2route/pkg/netutils"
 	"github.com/vishvananda/netlink"
@@ -130,18 +129,6 @@ func (nm *NeighborManager) MonitorNeighbors() {
 		if update.Neigh.State == netlink.NUD_FAILED || nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.RemoveNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
-	}
-}
-
-func (nm *NeighborManager) SendARPRequests() {
-	for {
-		nm.mu.Lock()
-		for _, neighbor := range nm.reachableNeighbors {
-			netutils.SendARPRequest(neighbor.ip)
-		}
-		nm.mu.Unlock()
-
-		<-time.After(30 * time.Second)
 	}
 }
 

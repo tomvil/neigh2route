@@ -38,7 +38,5 @@ func main() {
 		os.Exit(0)
 	}()
 
-	go nm.SendARPRequests()
-
 	nm.MonitorNeighbors()
 }

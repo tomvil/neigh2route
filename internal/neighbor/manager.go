@@ -3,6 +3,8 @@ package neighbor
 import (
 	"log"
 	"net"
+	"sync"
+	"time"
 
 	"github.com/tomvil/neigh2route/pkg/netutils"
 	"github.com/vishvananda/netlink"
@@ -129,6 +131,27 @@ func (nm *NeighborManager) MonitorNeighbors() {
 		if update.Neigh.State == netlink.NUD_FAILED || nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.RemoveNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
+	}
+}
+
+func (nm *NeighborManager) SendPings() {
+	for {
+		nm.mu.Lock()
+		var wg sync.WaitGroup
+
+		for _, n := range nm.reachableNeighbors {
+			wg.Add(1)
+			go func(n Neighbor) {
+				defer wg.Done()
+				if err := netutils.Ping(n.ip.String()); err != nil {
+					log.Printf("Failed to ping neighbor %s: %v", n.ip.String(), err)
+				}
+			}(n)
+		}
+		nm.mu.Unlock()
+		wg.Wait()
+
+		<-time.After(30 * time.Second)
 	}
 }
 

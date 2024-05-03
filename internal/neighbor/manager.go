@@ -37,6 +37,10 @@ func (n Neighbor) LinkIndexChanged(linkIndex int) bool {
 }
 
 func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
+	if ip.IsLinkLocalUnicast() {
+		return
+	}
+
 	nm.mu.Lock()
 	defer nm.mu.Unlock()
 
@@ -60,6 +64,10 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 }
 
 func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
+	if ip.IsLinkLocalUnicast() {
+		return
+	}
+
 	nm.mu.Lock()
 	defer nm.mu.Unlock()
 

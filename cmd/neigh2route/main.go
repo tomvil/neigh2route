@@ -39,6 +39,7 @@ func main() {
 	}()
 
 	go nm.SendPings()
+	go nm.PersistentRoutes()
 
 	nm.MonitorNeighbors()
 }

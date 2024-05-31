@@ -163,6 +163,20 @@ func (nm *NeighborManager) SendPings() {
 	}
 }
 
+func (nm *NeighborManager) PersistentRoutes() {
+	for {
+		nm.mu.Lock()
+		for _, n := range nm.reachableNeighbors {
+			if err := netutils.AddRoute(n.ip, n.linkIndex); err != nil {
+				log.Printf("Failed to add route for neighbor %s: %v", n.ip.String(), err)
+			}
+		}
+		nm.mu.Unlock()
+
+		<-time.After(30 * time.Second)
+	}
+}
+
 func (nm *NeighborManager) Cleanup() {
 	nm.mu.Lock()
 	defer nm.mu.Unlock()

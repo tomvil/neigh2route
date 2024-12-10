@@ -83,7 +83,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 
 	nm.mu.Lock()
 	for i, n := range nm.reachableNeighbors {
-		if n.ip.Equal(ip) {
+		if n.ip.Equal(ip) && n.linkIndex == linkIndex {
 			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
 			log.Printf("Removed neighbor %s", ip.String())
 			shouldRemoveRoute = true

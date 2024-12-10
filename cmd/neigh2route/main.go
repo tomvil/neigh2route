@@ -33,7 +33,8 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		<-c
+		sig := <-c
+		log.Printf("Received signal: %s. Cleaning up and exiting...", sig)
 		nm.Cleanup()
 		os.Exit(0)
 	}()

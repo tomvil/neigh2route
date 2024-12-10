@@ -42,10 +42,9 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 	}
 
 	nm.mu.Lock()
-	defer nm.mu.Unlock()
-
 	if neighbor := nm.getNeighbor(ip); !neighbor.IsEmpty() {
 		if !neighbor.LinkIndexChanged(linkIndex) {
+			nm.mu.Unlock()
 			return
 		}
 
@@ -57,6 +56,7 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 		ip:        ip,
 		linkIndex: linkIndex,
 	})
+	nm.mu.Unlock()
 
 	if err := netutils.AddRoute(ip, linkIndex); err != nil {
 		log.Printf("Failed to add route for neighbor %s: %v", ip.String(), err)
@@ -144,10 +144,14 @@ func (nm *NeighborManager) MonitorNeighbors() {
 
 func (nm *NeighborManager) SendPings() {
 	for {
-		nm.mu.Lock()
 		var wg sync.WaitGroup
 
-		for _, n := range nm.reachableNeighbors {
+		nm.mu.Lock()
+		neighbors := make([]Neighbor, len(nm.reachableNeighbors))
+		copy(neighbors, nm.reachableNeighbors)
+		nm.mu.Unlock()
+
+		for _, n := range neighbors {
 			wg.Add(1)
 			go func(n Neighbor) {
 				defer wg.Done()
@@ -156,7 +160,6 @@ func (nm *NeighborManager) SendPings() {
 				}
 			}(n)
 		}
-		nm.mu.Unlock()
 		wg.Wait()
 
 		<-time.After(30 * time.Second)
@@ -166,12 +169,15 @@ func (nm *NeighborManager) SendPings() {
 func (nm *NeighborManager) PersistentRoutes() {
 	for {
 		nm.mu.Lock()
-		for _, n := range nm.reachableNeighbors {
+		neighbors := make([]Neighbor, len(nm.reachableNeighbors))
+		copy(neighbors, nm.reachableNeighbors)
+		nm.mu.Unlock()
+
+		for _, n := range neighbors {
 			if err := netutils.AddRoute(n.ip, n.linkIndex); err != nil {
 				log.Printf("Failed to add route for neighbor %s: %v", n.ip.String(), err)
 			}
 		}
-		nm.mu.Unlock()
 
 		<-time.After(30 * time.Second)
 	}

@@ -68,16 +68,21 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 		return
 	}
 
-	nm.mu.Lock()
-	defer nm.mu.Unlock()
+	var shouldRemoveRoute bool
 
+	nm.mu.Lock()
 	for i, n := range nm.reachableNeighbors {
 		if n.ip.Equal(ip) {
 			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
-			if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
-				log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
-			}
-			return
+			shouldRemoveRoute = true
+			break
+		}
+	}
+	nm.mu.Unlock()
+
+	if shouldRemoveRoute {
+		if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
+			log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
 		}
 	}
 }

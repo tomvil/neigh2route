@@ -41,18 +41,17 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 		return
 	}
 
-	var neighbor Neighbor
 	var shouldRemoveNeighbor bool
 
 	nm.mu.Lock()
-	if n := nm.getNeighbor(ip); !neighbor.IsEmpty() {
-		if !n.LinkIndexChanged(linkIndex) {
+	neighbor := nm.getNeighbor(ip)
+	if !neighbor.IsEmpty() {
+		if !neighbor.LinkIndexChanged(linkIndex) {
 			nm.mu.Unlock()
 			return
 		}
 
-		log.Printf("Neighbor %s link index changed, re-adding route", ip.String())
-		neighbor = n
+		log.Printf("Neighbor %s link index changed, re-adding neighbor", ip.String())
 		shouldRemoveNeighbor = true
 	}
 

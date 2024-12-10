@@ -1,6 +1,7 @@
 package netutils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-ping/ping"
@@ -9,7 +10,7 @@ import (
 func Ping(ip string) error {
 	pinger, err := ping.NewPinger(ip)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create pinger: %w", err)
 	}
 
 	pinger.Count = 3
@@ -19,7 +20,7 @@ func Ping(ip string) error {
 
 	err = pinger.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to run pinger: %w", err)
 	}
 
 	return nil

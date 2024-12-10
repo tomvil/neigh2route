@@ -109,15 +109,12 @@ func (nm *NeighborManager) isNeighborExternallyLearned(flags int) bool {
 }
 
 func (nm *NeighborManager) InitializeNeighborTable() error {
-	var neighbors []netlink.Neigh
-	var err error
-
+	interfaceIndex := 0
 	if nm.targetInterfaceIndex >= 0 {
-		neighbors, err = netlink.NeighList(nm.targetInterfaceIndex, netlink.FAMILY_ALL)
-	} else {
-		neighbors, err = netlink.NeighList(0, netlink.FAMILY_ALL)
+		interfaceIndex = nm.targetInterfaceIndex
 	}
 
+	neighbors, err := netlink.NeighList(interfaceIndex, netlink.FAMILY_ALL)
 	if err != nil {
 		return err
 	}

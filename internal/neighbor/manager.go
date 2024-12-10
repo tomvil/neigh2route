@@ -164,14 +164,10 @@ func (nm *NeighborManager) SendPings() {
 		copy(neighbors, nm.reachableNeighbors)
 		nm.mu.Unlock()
 
-		sem := make(chan struct{}, 5)
 		for _, n := range neighbors {
 			wg.Add(1)
-			sem <- struct{}{}
-
 			go func(n Neighbor) {
 				defer wg.Done()
-				defer func() { <-sem }()
 				if err := netutils.Ping(n.ip.String()); err != nil {
 					log.Printf("Failed to ping neighbor %s: %v", n.ip.String(), err)
 				}
@@ -179,7 +175,7 @@ func (nm *NeighborManager) SendPings() {
 		}
 		wg.Wait()
 
-		time.Sleep(30 * time.Second)
+		<-time.After(30 * time.Second)
 	}
 }
 
@@ -196,7 +192,7 @@ func (nm *NeighborManager) PersistentRoutes() {
 			}
 		}
 
-		time.Sleep(30 * time.Second)
+		<-time.After(30 * time.Second)
 	}
 }
 

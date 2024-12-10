@@ -41,15 +41,19 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 		return
 	}
 
+	var neighbor Neighbor
+	var shouldRemoveNeighbor bool
+
 	nm.mu.Lock()
-	if neighbor := nm.getNeighbor(ip); !neighbor.IsEmpty() {
-		if !neighbor.LinkIndexChanged(linkIndex) {
+	if n := nm.getNeighbor(ip); !neighbor.IsEmpty() {
+		if !n.LinkIndexChanged(linkIndex) {
 			nm.mu.Unlock()
 			return
 		}
 
 		log.Printf("Neighbor %s link index changed, re-adding route", ip.String())
-		nm.RemoveNeighbor(neighbor.ip, neighbor.linkIndex)
+		neighbor = n
+		shouldRemoveNeighbor = true
 	}
 
 	nm.reachableNeighbors = append(nm.reachableNeighbors, Neighbor{
@@ -57,6 +61,10 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 		linkIndex: linkIndex,
 	})
 	nm.mu.Unlock()
+
+	if shouldRemoveNeighbor {
+		nm.RemoveNeighbor(neighbor.ip, neighbor.linkIndex)
+	}
 
 	if err := netutils.AddRoute(ip, linkIndex); err != nil {
 		log.Printf("Failed to add route for neighbor %s: %v", ip.String(), err)

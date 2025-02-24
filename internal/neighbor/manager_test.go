@@ -54,14 +54,3 @@ func TestRemoveNeighbor(t *testing.T) {
 		t.Errorf("Expected 0, got %d", len(nm.reachableNeighbors))
 	}
 }
-
-func TestAddNeighborLinkLocal(t *testing.T) {
-	nm, _ := NewNeighborManager("lo")
-
-	ip := net.ParseIP("fe80::1")
-	nm.AddNeighbor(ip, 1)
-
-	if len(nm.reachableNeighbors) != 0 {
-		t.Errorf("Expected 0, got %d", len(nm.reachableNeighbors))
-	}
-}

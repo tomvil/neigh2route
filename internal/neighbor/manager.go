@@ -115,6 +115,10 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 	}
 
 	for _, n := range neighbors {
+		if n.IP.IsLinkLocalUnicast() {
+			continue
+		}
+
 		if (n.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(n.Flags) {
 			nm.AddNeighbor(n.IP, n.LinkIndex)
 		}

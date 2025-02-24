@@ -129,7 +129,8 @@ func (nm *NeighborManager) MonitorNeighbors() {
 	defer close(done)
 
 	if err := netlink.NeighSubscribe(updates, done); err != nil {
-		log.Fatalf("Failed to subscribe to neighbor updates: %v", err)
+		log.Fatalf("Failed to subscribe to neighbor updates: %v (interface: %s, index: %d)",
+			err, nm.targetInterface, nm.targetInterfaceIndex)
 	}
 
 	for update := range updates {
@@ -140,6 +141,9 @@ func (nm *NeighborManager) MonitorNeighbors() {
 		if update.Neigh.IP.IsLinkLocalUnicast() {
 			continue
 		}
+
+		log.Printf("Received neighbor update: IP=%s, State=%s, Flags=%s, LinkIndex=%d",
+			update.Neigh.IP, neighborStateToString(update.Neigh.State), neighborFlagsToString(update.Neigh.Flags), update.Neigh.LinkIndex)
 
 		if (update.Neigh.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {
 			nm.AddNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)

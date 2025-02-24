@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -18,7 +17,7 @@ var (
 func main() {
 	flag.Parse()
 
-	fmt.Println("Initializing neighbor table and monitoring updates...")
+	log.Println("Initializing neighbor table and monitoring updates...")
 
 	nm, err := neighbor.NewNeighborManager(*listenInterface)
 	if err != nil {

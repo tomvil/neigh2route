@@ -86,7 +86,9 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	if shouldRemoveRoute {
 		if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
 			log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
+			return
 		}
+		log.Printf("Removed route for neighbor %s", ip.String())
 	}
 }
 
@@ -114,15 +116,21 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 		return err
 	}
 
+	log.Printf("Initializing neighbor table with %d neighbors", len(neighbors))
+
 	for _, n := range neighbors {
 		if n.IP.IsLinkLocalUnicast() {
+			log.Printf("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			continue
 		}
 
 		if (n.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(n.Flags) {
+			log.Printf("Adding neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			nm.AddNeighbor(n.IP, n.LinkIndex)
 		}
 	}
+
+	log.Printf("Neighbor table initialized finished")
 
 	return nil
 }
@@ -150,10 +158,12 @@ func (nm *NeighborManager) MonitorNeighbors() {
 			update.Neigh.IP, neighborStateToString(update.Neigh.State), neighborFlagsToString(update.Neigh.Flags), update.Neigh.LinkIndex)
 
 		if (update.Neigh.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {
+			log.Printf("Adding neighbor with IP=%s, LinkIndex=%d", update.Neigh.IP, update.Neigh.LinkIndex)
 			nm.AddNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
 
 		if update.Neigh.State == netlink.NUD_FAILED || nm.isNeighborExternallyLearned(update.Neigh.Flags) {
+			log.Printf("Removing neighbor with IP=%s, LinkIndex=%d", update.Neigh.IP, update.Neigh.LinkIndex)
 			nm.RemoveNeighbor(update.Neigh.IP, update.Neigh.LinkIndex)
 		}
 	}
@@ -207,6 +217,8 @@ func (nm *NeighborManager) Cleanup() {
 	for _, n := range nm.reachableNeighbors {
 		if err := netutils.RemoveRoute(n.ip, n.linkIndex); err != nil {
 			log.Printf("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
+			continue
 		}
+		log.Printf("Removed route for neighbor %s", n.ip.String())
 	}
 }

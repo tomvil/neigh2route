@@ -44,7 +44,6 @@ func AddRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to add route for %s: %w", ip.String(), err)
 	}
 
-	fmt.Printf("Added route for %s\n", ip.String())
 	return nil
 }
 
@@ -74,6 +73,5 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to remove route for %s: %w", ip.String(), err)
 	}
 
-	fmt.Printf("Removed route for %s\n", ip.String())
 	return nil
 }

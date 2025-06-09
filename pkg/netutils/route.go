@@ -2,6 +2,7 @@ package netutils
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/vishvananda/netlink"
@@ -30,6 +31,7 @@ func AddRoute(ip net.IP, linkIndex int) error {
 	if err != nil {
 		return fmt.Errorf("failed to check if route exists for %s: %w", ip.String(), err)
 	}
+
 	if exists {
 		return nil
 	}
@@ -44,6 +46,7 @@ func AddRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to add route for %s: %w", ip.String(), err)
 	}
 
+	log.Printf("Added route for %s on link index %d", ip.String(), linkIndex)
 	return nil
 }
 
@@ -59,6 +62,7 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 	if err != nil {
 		return fmt.Errorf("failed to check if route exists for %s: %w", ip.String(), err)
 	}
+
 	if !exists {
 		return nil
 	}
@@ -73,5 +77,6 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to remove route for %s: %w", ip.String(), err)
 	}
 
+	log.Printf("Removed route for %s on link index %d", ip.String(), linkIndex)
 	return nil
 }

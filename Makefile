@@ -1,11 +1,11 @@
-VERSION=1.2.0
+VERSION=1.2.1
 PACKAGES_DIR=compiled_packages
 
 all: test build
 
 test:
-	go fmt ./
-	go vet -v ./
+	go fmt ./...
+	go vet -v ./...
 
 clean:
 	rm -f ${PACKAGES_DIR}/*

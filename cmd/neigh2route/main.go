@@ -17,8 +17,6 @@ var (
 func main() {
 	flag.Parse()
 
-	log.Println("Initializing neighbor table and monitoring updates...")
-
 	nm, err := neighbor.NewNeighborManager(*listenInterface)
 	if err != nil {
 		log.Fatalf("Failed to initialize neighbor manager: %v", err)

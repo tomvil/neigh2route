@@ -10,6 +10,7 @@ type NeighborManager struct {
 	reachableNeighbors   []Neighbor
 	targetInterface      string
 	targetInterfaceIndex int
+	isShuttingDown       bool
 }
 
 type Neighbor struct {

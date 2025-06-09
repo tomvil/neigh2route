@@ -70,9 +70,8 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 }
 
 func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
-	var shouldRemoveRoute bool
-
 	nm.mu.Lock()
+	var shouldRemoveRoute bool
 	for i, n := range nm.reachableNeighbors {
 		if n.ip.Equal(ip) && n.linkIndex == linkIndex {
 			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
@@ -81,14 +80,15 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 			break
 		}
 	}
-	nm.mu.Unlock()
 
 	if shouldRemoveRoute {
 		if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
 			log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
-			return
+		} else {
+			log.Printf("Removed route for neighbor %s", ip.String())
 		}
 	}
+	nm.mu.Unlock()
 }
 
 func (nm *NeighborManager) getNeighbor(ip net.IP) Neighbor {
@@ -193,6 +193,10 @@ func (nm *NeighborManager) SendPings() {
 func (nm *NeighborManager) PersistentRoutes() {
 	for {
 		nm.mu.Lock()
+		if nm.isShuttingDown {
+			nm.mu.Unlock()
+			return
+		}
 		neighbors := make([]Neighbor, len(nm.reachableNeighbors))
 		copy(neighbors, nm.reachableNeighbors)
 		nm.mu.Unlock()
@@ -210,9 +214,12 @@ func (nm *NeighborManager) PersistentRoutes() {
 
 func (nm *NeighborManager) Cleanup() {
 	nm.mu.Lock()
-	defer nm.mu.Unlock()
+	nm.isShuttingDown = true
+	neighbors := make([]Neighbor, len(nm.reachableNeighbors))
+	copy(neighbors, nm.reachableNeighbors)
+	nm.mu.Unlock()
 
-	for _, n := range nm.reachableNeighbors {
+	for _, n := range neighbors {
 		if err := netutils.RemoveRoute(n.ip, n.linkIndex); err != nil {
 			log.Printf("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
 			continue

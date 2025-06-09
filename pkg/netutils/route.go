@@ -16,7 +16,14 @@ func routeExists(dst *net.IPNet, linkIndex int) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to list routes for dst %s on link %d: %w", dst.String(), linkIndex, err)
 	}
-	return len(routes) > 0, nil
+
+	if len(routes) == 0 {
+		log.Printf("No routes found for dst %s on link index %d", dst.String(), linkIndex)
+		return false, nil
+	}
+
+	log.Printf("Found %d routes for dst %s on link index %d", len(routes), dst.String(), linkIndex)
+	return true, nil
 }
 
 func AddRoute(ip net.IP, linkIndex int) error {

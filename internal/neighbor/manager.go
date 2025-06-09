@@ -190,24 +190,6 @@ func (nm *NeighborManager) SendPings() {
 	}
 }
 
-func (nm *NeighborManager) PersistentRoutes() {
-	for {
-		nm.mu.Lock()
-		neighbors := make([]Neighbor, len(nm.reachableNeighbors))
-		copy(neighbors, nm.reachableNeighbors)
-		nm.mu.Unlock()
-
-		log.Printf("Adding persistent routes for %d neighbors", len(neighbors))
-		for _, n := range neighbors {
-			if err := netutils.AddRoute(n.ip, n.linkIndex); err != nil {
-				log.Printf("Failed to add route for neighbor %s: %v", n.ip.String(), err)
-			}
-		}
-
-		<-time.After(30 * time.Second)
-	}
-}
-
 func (nm *NeighborManager) Cleanup() {
 	nm.mu.Lock()
 	defer nm.mu.Unlock()

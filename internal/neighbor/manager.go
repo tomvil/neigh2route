@@ -88,7 +88,6 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 			log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
 			return
 		}
-		log.Printf("Removed route for neighbor %s", ip.String())
 	}
 }
 

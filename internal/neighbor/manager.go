@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tomvil/neigh2route/internal/logger"
 	"github.com/tomvil/neigh2route/pkg/netutils"
 	"github.com/vishvananda/netlink"
 )
@@ -153,7 +154,7 @@ func (nm *NeighborManager) MonitorNeighbors() {
 			continue
 		}
 
-		log.Printf("Received neighbor update: IP=%s, State=%s, Flags=%s, LinkIndex=%d",
+		logger.Debug("Received neighbor update: IP=%s, State=%s, Flags=%s, LinkIndex=%d",
 			update.Neigh.IP, neighborStateToString(update.Neigh.State), neighborFlagsToString(update.Neigh.Flags), update.Neigh.LinkIndex)
 
 		if (update.Neigh.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(update.Neigh.Flags) {

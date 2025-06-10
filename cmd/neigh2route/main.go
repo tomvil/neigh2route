@@ -7,15 +7,19 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/tomvil/neigh2route/internal/logger"
 	"github.com/tomvil/neigh2route/internal/neighbor"
 )
 
 var (
 	listenInterface = flag.String("interface", "", "Interface to monitor for neighbor updates")
+	debugMode       = flag.Bool("debug", false, "Enable debug logging")
 )
 
 func main() {
 	flag.Parse()
+
+	logger.Init(*debugMode)
 
 	nm, err := neighbor.NewNeighborManager(*listenInterface)
 	if err != nil {

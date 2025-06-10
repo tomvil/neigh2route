@@ -2,9 +2,9 @@ package netutils
 
 import (
 	"fmt"
-	"log"
 	"net"
 
+	"github.com/tomvil/neigh2route/internal/logger"
 	"github.com/vishvananda/netlink"
 )
 
@@ -18,11 +18,11 @@ func routeExists(dst *net.IPNet, linkIndex int) (bool, error) {
 	}
 
 	if len(routes) == 0 {
-		log.Printf("No routes found for dst %s on link index %d", dst.String(), linkIndex)
+		logger.Info("No routes found for dst %s on link index %d", dst.String(), linkIndex)
 		return false, nil
 	}
 
-	log.Printf("Found %d routes for dst %s on link index %d", len(routes), dst.String(), linkIndex)
+	logger.Info("Found %d routes for dst %s on link index %d", len(routes), dst.String(), linkIndex)
 	return true, nil
 }
 
@@ -53,7 +53,7 @@ func AddRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to add route for %s: %w", ip.String(), err)
 	}
 
-	log.Printf("Added route for %s on link index %d", ip.String(), linkIndex)
+	logger.Info("Added route for %s on link index %d", ip.String(), linkIndex)
 	return nil
 }
 
@@ -84,6 +84,6 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 		return fmt.Errorf("failed to remove route for %s: %w", ip.String(), err)
 	}
 
-	log.Printf("Removed route for %s on link index %d", ip.String(), linkIndex)
+	logger.Info("Removed route for %s on link index %d", ip.String(), linkIndex)
 	return nil
 }

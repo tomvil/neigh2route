@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,11 +22,11 @@ func main() {
 
 	nm, err := neighbor.NewNeighborManager(*listenInterface)
 	if err != nil {
-		log.Fatalf("Failed to initialize neighbor manager: %v", err)
+		logger.Error("Failed to initialize neighbor manager: %v", err)
 	}
 
 	if err := nm.InitializeNeighborTable(); err != nil {
-		log.Fatalf("Failed to initialize neighbor table: %v", err)
+		logger.Error("Failed to initialize neighbor table: %v", err)
 	}
 
 	c := make(chan os.Signal, 1)
@@ -35,7 +34,7 @@ func main() {
 
 	go func() {
 		sig := <-c
-		log.Printf("Received signal: %s. Cleaning up and exiting...", sig)
+		logger.Info("Received signal: %s. Cleaning up and exiting...", sig)
 		nm.Cleanup()
 		os.Exit(0)
 	}()

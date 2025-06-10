@@ -1,7 +1,6 @@
 package neighbor
 
 import (
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -48,7 +47,7 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 			return
 		}
 
-		log.Printf("Neighbor %s link index changed, re-adding neighbor", ip.String())
+		logger.Info("Neighbor %s link index changed, re-adding neighbor", ip.String())
 		shouldRemoveNeighbor = true
 	}
 
@@ -63,11 +62,11 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 	}
 
 	if err := netutils.AddRoute(ip, linkIndex); err != nil {
-		log.Printf("Failed to add route for neighbor %s: %v", ip.String(), err)
+		logger.Info("Failed to add route for neighbor %s: %v", ip.String(), err)
 		return
 	}
 
-	log.Printf("Added neighbor %s", ip.String())
+	logger.Info("Added neighbor %s", ip.String())
 }
 
 func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
@@ -77,7 +76,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	for i, n := range nm.reachableNeighbors {
 		if n.ip.Equal(ip) && n.linkIndex == linkIndex {
 			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
-			log.Printf("Removed neighbor %s", ip.String())
+			logger.Info("Removed neighbor %s", ip.String())
 			shouldRemoveRoute = true
 			break
 		}
@@ -86,7 +85,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 
 	if shouldRemoveRoute {
 		if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
-			log.Printf("Failed to remove route for neighbor %s: %v", ip.String(), err)
+			logger.Info("Failed to remove route for neighbor %s: %v", ip.String(), err)
 			return
 		}
 	}
@@ -116,21 +115,21 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 		return err
 	}
 
-	log.Printf("Initializing neighbor table with %d neighbors", len(neighbors))
+	logger.Info("Initializing neighbor table with %d neighbors", len(neighbors))
 
 	for _, n := range neighbors {
 		if n.IP.IsLinkLocalUnicast() {
-			log.Printf("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
+			logger.Info("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			continue
 		}
 
 		if (n.State&(netlink.NUD_REACHABLE|netlink.NUD_STALE)) != 0 && !nm.isNeighborExternallyLearned(n.Flags) {
-			log.Printf("Adding neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
+			logger.Info("Adding neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			nm.AddNeighbor(n.IP, n.LinkIndex)
 		}
 	}
 
-	log.Printf("Neighbor table initialized finished")
+	logger.Info("Neighbor table initialized finished")
 
 	return nil
 }
@@ -141,7 +140,7 @@ func (nm *NeighborManager) MonitorNeighbors() {
 	defer close(done)
 
 	if err := netlink.NeighSubscribe(updates, done); err != nil {
-		log.Fatalf("Failed to subscribe to neighbor updates: %v (interface: %s, index: %d)",
+		logger.Error("Failed to subscribe to neighbor updates: %v (interface: %s, index: %d)",
 			err, nm.targetInterface, nm.targetInterfaceIndex)
 	}
 
@@ -181,7 +180,7 @@ func (nm *NeighborManager) SendPings() {
 			go func(n Neighbor) {
 				defer wg.Done()
 				if err := netutils.Ping(n.ip.String()); err != nil {
-					log.Printf("Failed to ping neighbor %s: %v", n.ip.String(), err)
+					logger.Info("Failed to ping neighbor %s: %v", n.ip.String(), err)
 				}
 			}(n)
 		}
@@ -197,9 +196,9 @@ func (nm *NeighborManager) Cleanup() {
 
 	for _, n := range nm.reachableNeighbors {
 		if err := netutils.RemoveRoute(n.ip, n.linkIndex); err != nil {
-			log.Printf("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
+			logger.Info("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
 			continue
 		}
-		log.Printf("Removed route for neighbor %s", n.ip.String())
+		logger.Info("Removed route for neighbor %s", n.ip.String())
 	}
 }

@@ -1,7 +1,6 @@
 package netutils
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/tomvil/neigh2route/internal/logger"
@@ -14,7 +13,8 @@ func routeExists(dst *net.IPNet, linkIndex int) (bool, error) {
 		Dst:       dst,
 	}, netlink.RT_FILTER_DST|netlink.RT_FILTER_OIF)
 	if err != nil {
-		return false, fmt.Errorf("failed to list routes for dst %s on link %d: %w", dst.String(), linkIndex, err)
+		logger.Error("Failed to list routes for dst %s on link %d: %w", dst.String(), linkIndex, err)
+		return false, err
 	}
 
 	if len(routes) == 0 {
@@ -36,7 +36,8 @@ func AddRoute(ip net.IP, linkIndex int) error {
 
 	exists, err := routeExists(routeDst, linkIndex)
 	if err != nil {
-		return fmt.Errorf("failed to check if route exists for %s: %w", ip.String(), err)
+		logger.Error("Failed to check if route exists for %s: %w", ip.String(), err)
+		return err
 	}
 
 	if exists {
@@ -50,7 +51,8 @@ func AddRoute(ip net.IP, linkIndex int) error {
 	}
 
 	if err := netlink.RouteAdd(route); err != nil {
-		return fmt.Errorf("failed to add route for %s: %w", ip.String(), err)
+		logger.Error("Failed to add route for %s: %w", ip.String(), err)
+		return err
 	}
 
 	logger.Info("Added route for %s on link index %d", ip.String(), linkIndex)
@@ -67,7 +69,8 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 
 	exists, err := routeExists(routeDst, linkIndex)
 	if err != nil {
-		return fmt.Errorf("failed to check if route exists for %s: %w", ip.String(), err)
+		logger.Error("Failed to check if route exists for %s: %w", ip.String(), err)
+		return err
 	}
 
 	if !exists {
@@ -81,7 +84,8 @@ func RemoveRoute(ip net.IP, linkIndex int) error {
 	}
 
 	if err := netlink.RouteDel(route); err != nil {
-		return fmt.Errorf("failed to remove route for %s: %w", ip.String(), err)
+		logger.Error("Failed to remove route for %s: %w", ip.String(), err)
+		return err
 	}
 
 	logger.Info("Removed route for %s on link index %d", ip.String(), linkIndex)

@@ -50,7 +50,7 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 	if shouldRemoveRoute {
 		err := netutils.RemoveRoute(ip, neighbor.linkIndex)
 		if err != nil {
-			logger.Info("Failed to remove old route for neighbor %s: %v", ip.String(), err)
+			logger.Error("Failed to remove old route for neighbor %s: %v", ip.String(), err)
 			return
 		}
 	}
@@ -59,7 +59,7 @@ func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
 	nm.mu.Unlock()
 
 	if err := netutils.AddRoute(ip, linkIndex); err != nil {
-		logger.Info("Failed to add route for neighbor %s: %v", ip.String(), err)
+		logger.Error("Failed to add route for neighbor %s: %v", ip.String(), err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 
 	if shouldRemoveRoute {
 		if err := netutils.RemoveRoute(ip, linkIndex); err != nil {
-			logger.Info("Failed to remove route for neighbor %s: %v", ip.String(), err)
+			logger.Error("Failed to remove route for neighbor %s: %v", ip.String(), err)
 			return
 		}
 	}
@@ -168,7 +168,7 @@ func (nm *NeighborManager) SendPings() {
 			go func(n Neighbor) {
 				defer wg.Done()
 				if err := netutils.Ping(n.ip.String()); err != nil {
-					logger.Info("Failed to ping neighbor %s: %v", n.ip.String(), err)
+					logger.Error("Failed to ping neighbor %s: %v", n.ip.String(), err)
 				}
 			}(n)
 		}
@@ -184,7 +184,7 @@ func (nm *NeighborManager) Cleanup() {
 
 	for _, n := range nm.reachableNeighbors {
 		if err := netutils.RemoveRoute(n.ip, n.linkIndex); err != nil {
-			logger.Info("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
+			logger.Error("Failed to remove route for neighbor %s: %v", n.ip.String(), err)
 			continue
 		}
 		logger.Info("Removed route for neighbor %s", n.ip.String())

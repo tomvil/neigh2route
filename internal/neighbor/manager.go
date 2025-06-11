@@ -12,7 +12,8 @@ import (
 
 func NewNeighborManager(targetInterface string) (*NeighborManager, error) {
 	nm := &NeighborManager{
-		targetInterface: targetInterface,
+		targetInterface:    targetInterface,
+		reachableNeighbors: make(map[string]Neighbor),
 	}
 
 	if targetInterface != "" {
@@ -28,38 +29,34 @@ func NewNeighborManager(targetInterface string) (*NeighborManager, error) {
 	return nm, nil
 }
 
-func (n Neighbor) IsEmpty() bool {
-	return n.ip == nil
-}
-
 func (n Neighbor) LinkIndexChanged(linkIndex int) bool {
 	return n.linkIndex != linkIndex
 }
 
 func (nm *NeighborManager) AddNeighbor(ip net.IP, linkIndex int) {
-	var shouldRemoveNeighbor bool
+	var shouldRemoveRoute bool
 
 	nm.mu.Lock()
-	neighbor := nm.getNeighbor(ip)
-	if !neighbor.IsEmpty() {
+	neighbor, exists := nm.reachableNeighbors[ip.String()]
+	if exists {
 		if !neighbor.LinkIndexChanged(linkIndex) {
 			nm.mu.Unlock()
 			return
 		}
-
 		logger.Info("Neighbor %s link index changed, re-adding neighbor", ip.String())
-		shouldRemoveNeighbor = true
+		shouldRemoveRoute = true
 	}
 
-	nm.reachableNeighbors = append(nm.reachableNeighbors, Neighbor{
-		ip:        ip,
-		linkIndex: linkIndex,
-	})
+	if shouldRemoveRoute {
+		err := netutils.RemoveRoute(ip, neighbor.linkIndex)
+		if err != nil {
+			logger.Info("Failed to remove old route for neighbor %s: %v", ip.String(), err)
+			return
+		}
+	}
+
+	nm.reachableNeighbors[ip.String()] = Neighbor{ip: ip, linkIndex: linkIndex}
 	nm.mu.Unlock()
-
-	if shouldRemoveNeighbor {
-		nm.RemoveNeighbor(neighbor.ip, neighbor.linkIndex)
-	}
 
 	if err := netutils.AddRoute(ip, linkIndex); err != nil {
 		logger.Info("Failed to add route for neighbor %s: %v", ip.String(), err)
@@ -73,13 +70,10 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	var shouldRemoveRoute bool
 
 	nm.mu.Lock()
-	for i, n := range nm.reachableNeighbors {
-		if n.ip.Equal(ip) && n.linkIndex == linkIndex {
-			nm.reachableNeighbors = append(nm.reachableNeighbors[:i], nm.reachableNeighbors[i+1:]...)
-			logger.Info("Removed neighbor %s", ip.String())
-			shouldRemoveRoute = true
-			break
-		}
+	if _, exists := nm.reachableNeighbors[ip.String()]; exists {
+		delete(nm.reachableNeighbors, ip.String())
+		logger.Info("Removed neighbor %s", ip.String())
+		shouldRemoveRoute = true
 	}
 	nm.mu.Unlock()
 
@@ -89,15 +83,6 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 			return
 		}
 	}
-}
-
-func (nm *NeighborManager) getNeighbor(ip net.IP) Neighbor {
-	for _, n := range nm.reachableNeighbors {
-		if n.ip.Equal(ip) {
-			return n
-		}
-	}
-	return Neighbor{}
 }
 
 func (nm *NeighborManager) isNeighborExternallyLearned(flags int) bool {
@@ -171,8 +156,11 @@ func (nm *NeighborManager) SendPings() {
 		var wg sync.WaitGroup
 
 		nm.mu.Lock()
-		neighbors := make([]Neighbor, len(nm.reachableNeighbors))
-		copy(neighbors, nm.reachableNeighbors)
+		neighbors := make([]Neighbor, 0, len(nm.reachableNeighbors))
+
+		for _, n := range nm.reachableNeighbors {
+			neighbors = append(neighbors, n)
+		}
 		nm.mu.Unlock()
 
 		for _, n := range neighbors {

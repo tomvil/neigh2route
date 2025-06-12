@@ -13,6 +13,6 @@ type NeighborManager struct {
 }
 
 type Neighbor struct {
-	ip        net.IP
-	linkIndex int
+	IP        net.IP
+	LinkIndex int
 }

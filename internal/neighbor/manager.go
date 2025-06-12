@@ -85,6 +85,17 @@ func (nm *NeighborManager) RemoveNeighbor(ip net.IP, linkIndex int) {
 	}
 }
 
+func (nm *NeighborManager) ListNeighbors() map[string]Neighbor {
+	nm.mu.Lock()
+	defer nm.mu.Unlock()
+
+	copyMap := make(map[string]Neighbor, len(nm.reachableNeighbors))
+	for k, v := range nm.reachableNeighbors {
+		copyMap[k] = v
+	}
+	return copyMap
+}
+
 func (nm *NeighborManager) isNeighborExternallyLearned(flags int) bool {
 	return flags&netlink.NTF_EXT_LEARNED != 0
 }
@@ -155,13 +166,7 @@ func (nm *NeighborManager) SendPings() {
 	for {
 		var wg sync.WaitGroup
 
-		nm.mu.Lock()
-		neighbors := make([]Neighbor, 0, len(nm.reachableNeighbors))
-
-		for _, n := range nm.reachableNeighbors {
-			neighbors = append(neighbors, n)
-		}
-		nm.mu.Unlock()
+		neighbors := nm.ListNeighbors()
 
 		for _, n := range neighbors {
 			wg.Add(1)

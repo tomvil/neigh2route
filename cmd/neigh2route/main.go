@@ -25,7 +25,7 @@ func main() {
 
 	nm, err := neighbor.NewNeighborManager(*listenInterface)
 	if err != nil {
-		logger.Error("Failed to initialize neighbor manager: %v", err)
+		logger.Fatal("Failed to initialize neighbor manager: %v", err)
 	}
 
 	if err := nm.InitializeNeighborTable(); err != nil {

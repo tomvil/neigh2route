@@ -27,3 +27,7 @@ func Warn(format string, v ...interface{}) {
 func Error(format string, v ...interface{}) {
 	log.Printf("[ERROR] "+format, v...)
 }
+
+func Fatal(format string, v ...interface{}) {
+	log.Fatalf("[FATAL] "+format, v...)
+}

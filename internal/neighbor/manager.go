@@ -114,6 +114,11 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 	logger.Info("Initializing neighbor table with %d neighbors", len(neighbors))
 
 	for _, n := range neighbors {
+		if n.IP == nil {
+			logger.Warn("Skipping neighbor with nil IP during initialization")
+			continue
+		}
+
 		if n.IP.IsLinkLocalUnicast() {
 			logger.Info("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			continue
@@ -142,6 +147,11 @@ func (nm *NeighborManager) MonitorNeighbors() {
 
 	for update := range updates {
 		if nm.targetInterfaceIndex > 0 && update.Neigh.LinkIndex != nm.targetInterfaceIndex {
+			continue
+		}
+
+		if update.Neigh.IP == nil {
+			logger.Warn("Received neighbor update with nil IP, skipping")
 			continue
 		}
 

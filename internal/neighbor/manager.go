@@ -120,7 +120,7 @@ func (nm *NeighborManager) InitializeNeighborTable() error {
 		}
 
 		if n.IP.IsLinkLocalUnicast() {
-			logger.Info("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
+			logger.Debug("Skipping link-local neighbor with IP=%s, LinkIndex=%d", n.IP, n.LinkIndex)
 			continue
 		}
 

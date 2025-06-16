@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/tomvil/neigh2route/internal/neighbor"
 )
@@ -26,6 +27,10 @@ func (a *API) ListNeighborsHandler(w http.ResponseWriter, r *http.Request) {
 			LinkIndex: n.LinkIndex,
 		})
 	}
+
+	sort.Slice(output, func(i, j int) bool {
+		return output[i].IP < output[j].IP
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(output)

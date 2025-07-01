@@ -1,3 +1,5 @@
+# Moved to https://github.com/hostinger/neigh2route
+
 # neigh2route
 
 **neigh2route** is a small tool that listens for neighbor updates and adds corresponding static routes on Linux.
